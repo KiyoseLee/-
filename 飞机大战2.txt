@@ -1,0 +1,332 @@
+#include <iostream>
+#include<stdio.h>
+#include<stdlib.h>
+#include<ctime>
+#include<windows.h>//控制台输出设置
+#include<conio.h>//获得用户键盘输入设置
+using namespace std;
+//定义全局变量
+int high, width;//游戏边界
+int position_x, position_y;//飞机位置
+int bullet_x, bullet_y;//子弹位置
+int enemy_x, enemy_y;//敌机位置
+int score;//得分
+int hp;//生命值
+
+//函数声明
+int color(int a);//文字颜色设置
+void gotoxy(int x, int y);//设置光标位置
+void hidecursor();//隐藏光标
+void startup();//数据初始化
+void init_interface();//初始化界面
+void explation();//游戏说明
+void show_interface();//游戏界面设置
+void endgame();//游戏结束
+void Inpute();
+void effect();
+
+int main()
+{
+    SetConsoleTitle("飞机大战");
+    startup();
+    init_interface();
+    while(1)
+    {
+        show_interface();
+        if(hp==0)
+        {
+            system("cls");
+            endgame();
+        }
+        Inpute();
+        effect();
+    }
+    return 0;
+}
+
+int color(int a)
+{
+    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), a);
+    return 0;
+}
+
+void gotoxy(int x, int y)
+{
+    COORD a;//COORD是一个结构体，用于表示光标的位置。里面有两个成员x，y。
+    a.X= x;
+    a.Y= y;
+    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), a);
+}
+
+void hidecursor()
+{
+    CONSOLE_CURSOR_INFO cursor_info={1, 0};
+    //CONSOLE_CURSOR_INFO是一个结构体类型，第一个参数用来改变光标大小
+    //第二个参数用来控制光标是否显示，0为隐藏，1为显示
+    SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &cursor_info);
+}
+
+void init_interface()
+{
+    color(15);
+    gotoxy(43, 10);
+    printf("飞机大战");
+    color(11);
+    gotoxy(25, 22);
+    printf("1.开始游戏");
+    gotoxy(45, 22);
+    printf("2.游戏说明");
+    gotoxy(65, 22);
+    printf("3.退出游戏");
+    gotoxy(40, 27);
+    color(3);
+    printf("请选择 1 2 3：");
+    color(14);
+    int n;
+    scanf("%d", &n);//输入选项
+    switch(n)
+    {
+    case 1:
+        system("cls");//清屏
+        show_interface();
+        break;
+    case 2:
+        system("cls");
+        explation();
+        break;
+    case 3:
+        exit(0);
+        break;
+        //exit()结束当前进程,exit(1)表示进程正常退出，exit(2)表示进程错误退出
+    default:
+        color(12);
+        gotoxy(40, 28);
+        printf("请输入1-3之间的数！");
+        getchar();//消去回车键，避免用户对n输入字符导致getch失效
+        _getch();  //输入任意键
+        system("cls"); //清屏
+        init_interface();
+        }
+}
+
+void explation() //游戏提示
+{
+ int i,j = 1;
+  system("cls");
+  color(10);
+  gotoxy(44,1);
+  printf("游戏说明");
+  color(2);
+  for (i = 3; i <= 28; i++)  //输出上下边框===
+ {
+ for (j = 6; j <= 80; j++) //输出左右边框||
+ {
+  gotoxy(j, i);
+  if (i == 3 || i == 28) printf("=");
+  else if (j == 6 || j == 80) printf("||");
+ }
+ }
+  color(3);
+  gotoxy(20,5);
+  printf("1. W,A,S,D 分别控制飞机的上下左右移动");
+  color(10);
+  gotoxy(20,8);
+  printf("2. 按空格发射子弹，打中敌机即可得到一分");
+  color(14);
+  gotoxy(20,11);
+  printf("3.碰到敌机子弹死亡");
+  color(11);
+  gotoxy(20,14);
+  printf("4. ESC ：退出游戏");
+  color(4);
+  gotoxy(20,17);
+  printf("5. 玩的愉快！！！");
+  color(7);
+ gotoxy(20,20);
+ printf("/*****按任意键返回主页面*****/");
+  _getch();        //按任意键返回主界面
+  system("cls");
+  init_interface();
+}
+void startup()
+{
+    srand(time(0));
+    high=20;//游戏界面的高度
+    width=40;//宽度
+
+    position_x=high-3;//定义飞机的初始位置
+    position_y=width/2;
+
+    bullet_x=-1;
+    bullet_y=position_y;
+
+    enemy_x=1;
+    enemy_y=rand()%width;
+
+    score=0;
+
+    hp=3;    //飞机完好
+}
+
+void show_interface()
+{
+    gotoxy(50,8);
+    color(14);
+    printf("游戏得分：%d   生命值:  %d ",score, hp);
+    gotoxy(50,10);
+    printf("用W A S D 分别控制飞机的移动");
+    gotoxy(50,12);
+    printf("按下空格键即为发射炮弹");
+    gotoxy(50,14);
+    printf("v 的样子就是敌人的飞机");
+    gotoxy(0, 0);
+    int i, j, k;
+    for(i=0; i<high; ++i)
+    {
+        for(j=0; j<width; ++j)
+        {
+            if(!hp)
+                break;
+            else
+            {
+                if((j==width-1)||(i==high-1)||(j==0)||(i==0))//打印边界
+                    printf("-");
+                else if(i==position_x && j==position_y)
+                    printf("^");
+                else if((i==bullet_x)&&(j==bullet_y))  //子弹坐标
+                    printf("|");
+                else if((i==enemy_x)&&(j==enemy_y))  //敌机坐标
+                    printf("v");
+                else
+                    printf(" ");
+            }
+        }
+        printf("\n");
+    }
+    hidecursor();
+    return ;
+}
+
+void endgame()
+{
+    color(12);
+    gotoxy(45, 10);
+    printf("游戏结束");
+    color(10);
+    gotoxy(45, 15);
+    printf("分数为：%d", score);
+    color(11);
+    gotoxy(25, 22);
+    printf("1.再玩一次");
+    gotoxy(45, 22);
+    printf("2.返回主菜单");
+    gotoxy(65, 22);
+    printf("3.退出游戏");
+    gotoxy(40, 27);
+    color(3);
+    printf("请选择 1 2 3：");
+    color(14);
+    int n;
+    scanf("%d", &n);//输入选项
+    switch(n)
+    {
+    case 1:
+        system("cls");//清屏
+        startup();
+        show_interface();
+        break;
+    case 2:
+        system("cls");
+        startup();
+        init_interface();
+        break;
+    case 3:
+        exit(0);
+        break;
+        //exit()结束当前进程,exit(1)表示进程正常退出，exit(2)表示进程错误退出
+    default:
+        color(12);
+        gotoxy(40, 28);
+        printf("请输入1-3之间的数！");
+        getchar();//消去回车键，避免用户对n输入字符导致getch失效
+        _getch();  //输入任意键
+        system("cls"); //清屏
+        init_interface();
+    }
+}
+
+//static用法
+//static修饰局部变量，声明周期为整个源文件
+//但只有定义该变量的函数中，才能使用。存储在全局数据区
+
+//全局变量对整个工程可见，加extern后在其他文件可用，其他文件不能定义
+//与其同名的变量
+//静态全局变量仅对当前文件可见，其他文件不可访问，因此其他文件可以定义
+//同名的变量
+
+//普通函数可以在另一个文件中直接引用，甚至不必使用extern声明
+//静态函数只能在声明它的函数中使用，其他文件中不可见。
+//不同的文件可以使用相同名字的静态函数，互不影响
+
+
+//rand()产生伪随机数   srand函数设置种子，常用srand（time（0）），
+//从而使rand产生随机数
+//产生0-10内的随机数  rand()%11;
+//产生a-b内的随机数   rand()%(b-a+1)+a;
+void effect()//设置操作后的效果
+{
+    srand(time(0));
+    if(bullet_x>0)    //子弹上升效果
+        bullet_x--;
+    if((bullet_x==enemy_x)&&(bullet_y==enemy_y)) //子弹命中敌机
+    {
+        score++;
+        bullet_x=-1;    //子弹消失
+        enemy_x=1;
+        enemy_y=rand()%width;
+    }
+    if((position_x==enemy_x)&&(position_y==enemy_y))
+    {
+        hp--;
+        position_x=high-3;//定义飞机的初始位置
+        position_y=width/2;
+        enemy_x=1;
+        enemy_y=rand()%width;
+    }
+    static int speed;
+    if(speed<10)   //减慢敌机速度，不影响飞机和子弹速度
+        speed++;
+    if(speed==10)
+    {
+        if(enemy_x<high)
+            enemy_x++;
+        else
+        {
+            enemy_x=0;
+            enemy_y=rand()%width;
+        }
+        speed=0;
+    }
+}
+
+void Inpute()   //用户输入
+{
+    char input;
+    if(kbhit())  //kbhit函数，有键盘敲击，则返回1，没有键盘敲击，则返回0
+    {
+        input=getch();
+        if((input=='w')&&position_x>1)
+            position_x--;
+        if((input=='s')&&position_x<high-2)
+            position_x++;
+        if((input=='a')&&position_y>1)
+            position_y--;
+        if((input=='d')&&position_y<width-2)
+            position_y++;
+        if(input==' ')
+        {
+            bullet_x=position_x-1;
+            bullet_y=position_y;
+        }
+    }
+}
